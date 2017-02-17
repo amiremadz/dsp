@@ -24,19 +24,21 @@ def down_sample(x, M, L_fft):
 	plt.xlabel('Normalized freq (cycles per sample)')
 
 
-L = 128
-L_fft = 4*L
-n = np.arange(0, L)
-f0 = 1.0/20
-x = np.cos(2*np.pi*f0*n)
-X = np.fft.fft(x, L_fft)
-fn = np.linspace(0, 1-1.0/L_fft, L_fft)
+if __name__ == '__main__':
 
-M_list = [4, 8, 10, 20]
+	L = 128
+	L_fft = L
+	n = np.arange(0, L)
+	f0 = 1.0/20
+	x = np.cos(2*np.pi*f0*n)
+	X = np.fft.fft(x, L_fft)
+	fn = np.linspace(0, 1-1.0/L_fft, L_fft)
 
-for M in M_list:
-	down_sample(x, M, L_fft) 
+	M_list = [4, 8, 10, 20]
 
-plt.show()
+	for M in M_list:
+		down_sample(x, M, L_fft) 
+
+	plt.show()
 
 
