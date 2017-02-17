@@ -34,7 +34,7 @@ if __name__ == '__main__':
 	X = np.fft.fft(x, L_fft)
 	fn = np.linspace(0, 1-1.0/L_fft, L_fft)
 
-	M_list = [4, 8, 10, 20]
+	M_list = [2, 4, 8, 10, 20]
 
 	for M in M_list:
 		down_sample(x, M, L_fft) 
