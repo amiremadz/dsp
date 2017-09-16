@@ -1,0 +1,697 @@
+% Copyright 2004 by Till Tantau <tantau@users.sourceforge.net>.
+%
+% In principle, this file can be redistributed and/or modified under
+% the terms of the GNU Public License, version 2.
+%
+% However, this file is supposed to be a template to be modified
+% for your own needs. For this reason, if you use this file as a
+% template and not specifically distribute it as part of a another
+% package/program, I grant the extra permission to freely copy and
+% modify this file as you see fit and even to delete this copyright
+% notice. 
+
+\documentclass{beamer}
+
+% There are many different themes available for Beamer. A comprehensive
+% list with examples is given here:
+% http://deic.uab.es/~iblanes/beamer_gallery/index_by_theme.html
+% You can uncomment the themes below if you would like to use a different
+% one:
+%\usetheme{AnnArbor}
+%\usetheme{Antibes}
+%\usetheme{Bergen}
+%\usetheme{Berkeley}
+%\usetheme{Berlin}
+%\usetheme{Boadilla}
+%\usetheme{boxes}
+%\usetheme{CambridgeUS}
+%\usetheme{Copenhagen}
+%\usetheme{Darmstadt}
+%\usetheme{default}
+%\usetheme{Frankfurt}
+%\usetheme{Goettingen}
+%\usetheme{Hannover}
+%\usetheme{Ilmenau}
+%\usetheme{JuanLesPins}
+%\usetheme{Luebeck}
+\usetheme{Madrid}
+%\usetheme{Malmoe}
+%\usetheme{Marburg}
+%\usetheme{Montpellier}
+%\usetheme{PaloAlto}
+%\usetheme{Pittsburgh}
+%\usetheme{Rochester}
+%\usetheme{Singapore}
+%\usetheme{Szeged}
+%\usetheme{Warsaw}
+
+\usefonttheme{professionalfonts}
+\newcommand{\x}{\mathbf{x}}
+\newcommand{\z}{\mathbf{z}}
+
+%\usepackage{dsfont}
+\usepackage{amsmath}
+%\usepackage{clrscode}
+
+
+\definecolor{mgreen}{RGB}{40,160,40}
+\definecolor{mg}{rgb}{0,0.6,0}%
+\definecolor{groon}{rgb}{.1,.6,.1}
+\definecolor{UCLABlue}{rgb}{0.3242,0.4,0.6}
+
+
+\title{Particle Filters: Beyond the Kalman filter}
+
+% A subtitle is optional and this may be deleted
+%\subtitle{Optional Subtitle}
+
+\author{Amir Emadzadeh} %\and S.~Another\inst{2}}
+% - Give the names in the same order as the appear in the paper.
+% - Use the \inst{?} command only if the authors have different
+%   affiliation.
+
+%\institute[Universities of Somewhere and Elsewhere] % (optional, but mostly needed)
+%{
+%  \inst{1}%
+%  Department of Computer Science\\
+%  University of Somewhere
+%  \and
+%  \inst{2}%
+%  Department of Theoretical Philosophy\\
+%  University of Elsewhere}
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+
+\date{March 11, 2017}
+% - Either use conference name or its abbreviation.
+% - Not really informative to the audience, more for people (including
+%   yourself) who are reading the slides online
+
+%\subject{Theoretical Computer Science}
+% This is only inserted into the PDF information catalog. Can be left
+% out. 
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+ %\pgfdeclareimage[height=0.5cm]{university-logo}{figs/xnav.pdf}
+ %\logo{\pgfuseimage{university-logo}}
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+\AtBeginSubsection[]
+{
+  \begin{frame}<beamer>{Outline}
+    \tableofcontents[currentsection,currentsubsection]
+  \end{frame}
+}
+% Let's get started
+\begin{document}
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Outline}
+  \tableofcontents
+  % You might wish to add the option [pausesections]
+\end{frame}
+
+% Section and subsections will appear in the presentation overview
+% and table of contents.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Nonlinear Bayesian Tracking}
+%\subsection{First Subsection}
+
+\begin{frame}{Nonlinear Bayesian Tracking}%{Optional Subtitle}
+  \begin{itemize}
+  	\item {
+    	Bayesian estimation: construct posterior pdf of 		state based on all available information, including recieved measurements. 
+    }
+    \item{State Model:
+    $$
+    \mathbf{x}_k = \mathbf{f}_k(\mathbf{x}_{k-1}, 	\mathbf{v}_{k-1})
+	$$
+	where $\mathbf{f}_k \in \mathbb{R}^{n_x} \times \mathbb{R}^{n_v} \rightarrow \mathbb{R}^{n_x}$, $k \in \mathbb{N}$, and $\mathbf{v}_{k-1}$ is i.i.d noise
+	}
+	\item{ Measurement:
+	$$
+\mathbf{z}_k = \mathbf{h}_k(\mathbf{x}_k, \mathbf{n}_k)		
+	$$
+	where $\mathbf{h}_k \in \mathbb{R}^{n_x} \times \mathbb{R}^{n_n} \rightarrow \mathbb{R}^{n_z}$, and $\mathbf{n}_k$ is i.i.d noise
+	}
+	\item{ Goal: Estimate $\mathbf{x}_k$ using  $
+\mathbf{z}_{1:k}=\{\mathbf{z}_i, i=1, \cdots, k \}$ 
+	}
+	\item{Bayesian perspective: Recursively calculate belief: $p(\x_k|\z_{1:k})$
+	}
+	\item{Initial pdf: $p(\x_0|\z_0) \equiv p(x_0)$, $\z_0$: no measurements 
+	}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Nonlinear Bayesian Tracking}%{Optional Subtitle}
+  \begin{itemize}
+  	\item{ Optimal Bayesian Solution: Recursively calculate exact posterior pdf
+    }
+  	\item{Predecition: Chapman-Kolmogorov
+  	$$
+  		p(\mathbf{x}_k|\mathbf{z}_{1:k-1}) = \int
+  		p(\mathbf{x}_k|\mathbf{x}_{k-1}) p(\mathbf{x}	_{k-1}|\mathbf{z}_{1:k-1}) d\mathbf{x}_{k-1}
+	$$
+	where $p(\mathbf{x}_k|\mathbf{x}_{k-1}, \mathbf{z}_{1:k-1}) = p(\mathbf{x}_k|\mathbf{x}_{k-1})$: Markov oder One
+    }
+    \item{Update: Bayes' rule
+    $$
+		p(\mathbf{x}_k|\mathbf{z}_{1:k}) 
+    	= \frac{{p(\mathbf{z}_{k}|\mathbf{x}_k)}	p(\mathbf{x}_k|\mathbf{z}_{1:k-1})}
+		{{p(\mathbf{z}_{k}|\mathbf{z}_{1:k-1})}} 
+	$$
+	where normalizing constant:
+	$$
+		p(\mathbf{z}_k|\mathbf{z}_{1:k-1}) = \int
+  		p(\mathbf{z}_k|\mathbf{x}_{k}) p(\mathbf{x}_{k}|			\mathbf{z}_{1:k-1}) d\mathbf{x}_{k}
+  	$$
+    }    
+  \end{itemize}
+\end{frame}    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Optimal Algorithms}
+\subsection{Kalman Filter}
+
+\begin{frame}{Kalman Filter}%{Optional Subtitle}
+  \begin{itemize}
+  \item {Assumptions:    
+    \begin{align*}
+    \mathbf{}x_k &= F_k\mathbf{x}_{k-1} + \mathbf{v}_{k-1} \\
+    \mathbf{z}_k &= H_k\mathbf{x}_k + \mathbf{n}_k
+    \end{align*}
+where $\mathbf{v}_{k-1}$ and $\mathbf{n}_k$ are zero-mean Gaussian, statically independent, and   
+    \begin{align*}
+        E[\mathbf{v}_{k-1}\mathbf{v}_{k-1}^T] &= Q_{k-1} \\
+        E[\mathbf{n}_{k}\mathbf{n}_{k}^T] &= R_{k} \\
+    \end{align*}
+	}
+	\item{ Kalman filter algorithm:
+    \begin{align*}
+    p(\mathbf{x}_{k-1}|\mathbf{z}_{1:k-1}) &= \mathcal{N}(\mathbf{x}_{k-1}; m_{k-1|k}, P_{k-1|k-1}) \\
+    p(\mathbf{x}_{k}|\mathbf{z}_{1:k-1}) &= \mathcal{N}(\mathbf{x}_{k}; m_{k|k-1}, P_{k|k-1}) \\
+    p(\mathbf{x}_k|\mathbf{z}_{1:k}) &= \mathcal{N}(\mathbf{x}_k; m_{k|k}, P_{k|k})
+    \end{align*}
+    }
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Kalman Filter}%{Optional Subtitle}
+  \begin{itemize}
+  \item { Kalman filter algorithm:
+    \begin{align*}
+        m_{k|k-1} &= F_km_{k-1|k-1} \\
+        P_{k|k-1} &= Q_{k-1} + F_kP_{k-1|k-1}F_k^T \\
+        m_{k|k}   &= m_{k|k-1} + K_k(\mathbf{z}_k - H_km_{k|k-1}) \\
+        P_{k|k}   &= P_{k|k-1} - K_kH_kP_{k|k-1}
+    \end{align*}
+where  $S_k$ is covariance of innovation, and $K_k$ is Kalman gain:
+  \begin{align*}
+      S_k &= H_kP_{k|k-1}H_k^T + R_k \\
+      K_k &= P_{k|k-1}H_k^TS_k^{-1}
+  \end{align*}
+  }
+  \item Note: Same algorithm can be obtained using least squares, Gaussian assumption not necessary 
+  \end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Grid-based Methods}
+\begin{frame}{Grid-based Methods}%{Optional Subtitle}
+  \begin{itemize}
+  	\item { State space consists of finite number of discrete states $	\x_{k-1}^{i}, i=1,..., N_s$
+  	}
+	\item{If  
+    $$
+        \Pr(\mathbf{x}_{k-1}=\mathbf{x}_{k-1}^i|\mathbf{z}_{1:k-1})=w_{k-1|k-1}^i
+    $$
+  	}
+  	\item{Then, posterior pdf:         
+    $$
+        p(\mathbf{x}_{k-1}|\mathbf{z}_{1:k-1}) = 	\sum_{i=1}^{N_s} 
+        w_{k-1|k-1}^{i} \delta(\mathbf{x}_{k-1} - \mathbf{x}_{k-1}^i)
+    $$
+  	}
+  	\item{Prediction, Update:  
+    	\begin{align*}
+        p(\x_k|\z_{1:k-1}) &= \sum_{i=1}^{N_s}w_{k|k-1}^{i}\delta(\x_k - \x_k^i) \\
+        p(\x_k|\z_{1:k})   &= \sum_{i=1}^{N_s}w_{k|k}^{i}\delta(\x_k - \x_k^i)        
+    	\end{align*}  
+  	}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Grid-based Methods}%{Optional Subtitle}
+  \begin{itemize}
+  	\item{Where 
+    	\begin{align*}
+        w_{k|k-1}^{i} &\triangleq  \sum_{j=1}^{N_s} w_{k-1|k-1}^{i} p(\x_k^i|\x_{k-1}^j)\\
+        w_{k|k}^{i}   &\triangleq \frac{w_{k|k-1}^{i} p(\z_k|\x_{k}^i)}{\sum\limits_{j=1}^{N_s} w_{k|k-1}^{j} p(\z_k|\x_{k}^j)}
+    	\end{align*}
+  	}
+  	\item{ Assumption: $p(\x_k^i|\x_{k-1}^j)$ and $p(\z_k|\x_{k}^i)$ are known.
+  	}
+  \end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Suboptimal Algorithms}
+\subsection{Extended Kalman Filter}
+
+\begin{frame}{Extended Kalman Filter}%{Optional Subtitle}
+  \begin{itemize}
+  	\item {EKF: Approximates $p(\x_k|\z_{1:k})$ by a Gaussian:    
+    	\begin{align*}
+        p(\mathbf{x}_{k-1}|\mathbf{z}_{1:k-1}) &\approx \mathcal{N}(\mathbf{x}_{k-1}; m_{k-1|k}, P_{k-1|k-1}) \\
+        p(\mathbf{x}_{k}|\mathbf{z}_{1:k-1})   &\approx \mathcal{N}(\mathbf{x}_{k}; m_{k|k-1}, P_{k|k-1}) \\
+        p(\mathbf{x}_k|\mathbf{z}_{1:k})       &\approx \mathcal{N}(\mathbf{x}_k; m_{k|k}, P_{k|k})
+    	\end{align*}    
+  	}
+where    
+    	 \begin{align*}
+        m_{k|k-1} &= \mathbf{f}_k(m_{k-1|k-1}) \\
+        P_{k|k-1} &= Q_{k-1} + \hat{F}_kP_{k-1|k-1}\hat{F}_k^T \\
+        m_{k|k}   &= m_{k|k-1} + K_k(\mathbf{z}_k - \mathbf{h}_k(m_{k|k-1})) \\
+        P_{k|k}   &= P_{k|k-1} - K_k\hat{H}_kP_{k|k-1}
+    	\end{align*}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Extended Kalman Filter}%{Optional Subtitle}
+  \begin{itemize}
+  
+  	\item {Local linearization
+    	 \begin{align*}
+        \hat{F}_k &= \frac{d\mathbf{f}_k(x)}{dx}\Bigr|_{x=m_{k-1|k-1}} \\
+        \hat{H}_k &= \frac{d\mathbf{h}_k(x)}{dx}\Bigr|_{x=m_{k|k-1}} \\
+      S_K &= \hat{H}_kP_{k|k-1}\hat{H}_k^T + R_k \\
+      K_k &= P_{k|k-1}\hat{H}_k^TS_k^{-1}
+  \end{align*}
+  }
+  \item{EKF utilizes first term in Taylor expansion of nonlinear functions
+  }
+  \end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Approximate Grid-Based Methods}
+
+\begin{frame}{Approximate Grid-Based Methods}%{Optional Subtitle}
+  \begin{itemize}
+  	\item {Continuous state space: Decomposed into $N_s$ cells $\{\x_k^i: i=1, ..., N_s\}$
+    }
+    \item{Posterior pdf:
+   		 $$
+        p(\mathbf{x}_{k-1}|\mathbf{z}_{1:k-1}) \approx \sum_{i=1}^{N_s} 
+        w_{k-1|k-1}^{i} \delta(\mathbf{x}_{k-1} - \mathbf{x}_{k-1}^i)
+    	$$ 
+    }
+  	\item{Prediction, Update:
+  		\begin{align*}
+        	p(\x_k|\z_{1:k-1}) &\approx \sum_{i=1}^{N_s}w_{k|k-1}^{i}\delta(\x_k - \x_k^i) \\
+        	p(\x_k|\z_{1:k})   &\approx \sum_{i=1}^{N_s}w_{k|k}^{i}\delta(\x_k - \x_k^i)        
+    	\end{align*}
+    
+  	}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Approximate Grid-Based Methods}%{Optional Subtitle}
+  \begin{itemize}
+  \item {where
+     \begin{align*}
+        w_{k|k-1}^{i} &\triangleq \sum_{j=1}^{N_s} w_{k-1|k-1}^{i} \int_{x\in\x_k^i} p(\x|\bar{\x}_{k-1}^j) d\x\\
+        w_{k|k}^{i}   &\triangleq \frac{w_{k|k-1}^{i} \displaystyle{\int}_{\x \in \x_k^i} p(\z_k|\x)d\x}
+        {\sum\limits_{j=1}^{N_s} w_{k|k-1}^{j}
+        \displaystyle{\int}_{\x\in\x_k^j}p(\z_k|\x)d\x}
+    \end{align*}
+    $\bar{\x}_{k-1}^{j}$: center of $j$-th cell
+  }
+  \end{itemize}
+\end{frame}
+
+
+\begin{frame}{Approximate Grid-Based Methods}%{Optional Subtitle}
+  \begin{itemize}
+  	\item {Further approximation: weights computed at center of cells
+    	 \begin{align*}
+        w_{k|k-1}^{i} &\approx \sum_{j=1}^{N_s} w_{k-1|k-1}^{i}  p(\bar{\x}_k^i|\bar{\x}_{k-1}^j) \\
+        w_{k|k}^{i}   &\approx \frac{w_{k|k-1}^{i} p(\z_k|\bar{\x}_k^i)}
+        {\sum\limits_{j=1}^{N_s} w_{k|k-1}^{j}
+        p(\z_k|\bar{\x}_k^j)}
+    	\end{align*}
+  	}
+  	\item{As dimension of state space increases, computional cost increases dramatically.
+  	}
+  	\item State space predefined: Cannot be partitioned enevenly for greater resolution in high probability density regions.
+  \end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Particle Filter: Sequential Importance Sampling}
+\subsection{SIS Algorithm}
+
+\begin{frame}{SIS Algorithm}%{Optional Subtitle}
+  \begin{itemize}
+	  \item{A Monte Carlo method
+  	  }
+	  \item {Represent posterior pdf by a set of random samples with associated weights.
+  	  }
+  	  \item{Let $ \{\x_{0:k}^{i}, w_{k}^{i}\}_{i=1}^{N_s}$: 	Random measure which characterizes posterior pdf $p(\x_{0:k}|\z_{1:k})$
+  	  }	
+  	  \item{$\x_{0:k}=\{\x_j, j=0, ..., k\}$: Set of all states up to time $k$
+  	  }
+  	  \item{$\{\x_{0:k}^{i}, i=0, ..., N_s\}$: Set of support points associated with weghts $\{w_k^i, i=1, ..., N_s\}$ 
+  	  }
+  	  \item{$\sum_i w_k^i=1$}
+  	  \item{Then, posterior pdf is approximated:
+	  	$$
+        p(\x_{0:k} | \z_{1:k}) \approx \sum_{i=1}^{N_s} w_k^i \delta(\x_{0:k} - \x_{0:k}^{i})
+    	$$
+      }	
+  % You can also specify when the content should appear
+  % by using <n->:
+  %\item<3-> {
+  %  Third item.
+  %}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{SIS Algorithm}%{Optional Subtitle}
+  \begin{itemize}
+  		\item {Importance sampling: Suppose $p(x) \propto \pi(x)$ is difficult to draw samples
+  		}
+  		\item{$\pi(x)$ can be evaluated}
+  		\item{$x^i \sim q(x), i = 1, ..., N_s$: Samples easily generated from \emph{importance density} $q(\cdot)$ 
+  		}
+   		\item{Then, 
+    	$$
+        	p(x) \approx \sum_{i=1}^{N_s} w^i\delta(x - x^i)
+    	$$
+    	where    
+    	$$
+       		 w^i \propto \frac{\pi(x^i)}{q(x^i)}
+    	$$
+        }
+        \item{Now, in posterior pdf:
+   		 $$
+        	w_k^i \propto \frac{p(\x_{0:k}^{i}|\z_{1:k})}
+        {q(\x_{0:k}^{i}|\z_{1:k})}   
+    	$$
+    	}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{SIS Algorithm}%{Optional Subtitle}
+  \begin{itemize}
+  		\item{Choose 
+    	$$
+        	q(\x_{0:k}|\z_{1:k})=q(\x_k|\x_{0:k-1}, \z_{1:k})
+        q(\x_{0:k-1}|\z_{1:k-1})
+    	$$
+		}
+		\item{Note:
+    		\begin{align*}
+        		p(\x_{0:k}|\z_{1:k}) &= \frac{p(\z_k|\x_{0:k}|\z_{1:k-1})p(\x_{0:k}|\z_{1:k-1})}
+            {p(\z_{k}|\z_{1:k-1})} \\
+            &= \frac{p(\z_k|\x_{0:k}|\z_{1:k-1})p(\x_{k}|\x_{0:k-1}|\z_{1:k-1})}
+            {p(\z_{k}|\z_{1:k-1})} \\
+            & \quad \times p(\x_{0:k-1}|\z_{1:k-1}) \\
+            &= \frac{p(\z_k|\x_k)p(\x_k|\x_{k-1})}
+            {p(\z_k|\z_{1:k-1})}
+            p(\x_{0:k-1}|\z_{1:k-1}) \\
+            & \propto p(\z_k|\x_k)p(\x_k|\x_{k-1}) p(\x_{0:k-1}|\z_{1:k-1})
+    		\end{align*}
+    	}
+  \end{itemize}
+\end{frame} 
+ 
+
+\begin{frame}{SIS Algorithm}%{Optional Subtitle}
+  \begin{itemize}
+  	\item{Then,
+    	\begin{align*}
+        w_k^i &\propto 
+        \frac{p(\z_k|\x_k^i)p(\x_k^i|\x_{k-1}^i) p(\x^i_{0:k-1}|\z_{1:k-1})}
+        {q(\x_k^i | \x_{0;k-1}^{i}, \z_{1:k})q(\x_{0:k-1}^{i} | \z_{1:k-1})} \\
+            &= w_{k-1}^{i} \frac{p(\z_k|\x_k^i)p(\x_k^i|\x_{k-1}^i)}
+            {q(\x_k^i|\x_{0:k-1}^{i}, \z_{1:k})}
+    	\end{align*}
+   } 
+   \item{ Furthermore, if	
+    	$$
+        	q(\x_k|\x_{0:k-1}, \z_{1:k}) = q(\x_k|\x_{k-1}, \z_k)
+    	$$
+   } 
+   \item{Then,    
+    	$$
+        	w_k^i \propto w_{k-1}^{i} \frac{p(\z_k|\x_k^i)p(\x_k^i|\x_{k-1}^i)}
+            {q(\x_k^i|\x_{k-1}^{i}, \z_{k})}
+    	$$
+    }
+    \item{Posterior filtered pdf: Discard $\x_{0:k-1}^{i}$ and $\z_{1:k-1}$
+    	$$
+        	p(\x_k|\z_{1:k}) \approx \sum_{i=1}^{N_s}w_k^i\delta(\x_k - \x_k^i)
+    	$$   
+	  }
+  \end{itemize}
+\end{frame}
+
+\subsection{SIS Particle Filter}
+\begin{frame}{SIS Particle Filter}%{Optional Subtitle}
+
+    \texttt{Algorithm 1: SIS Particle Filter}
+    \newline
+    $\{\x_k^i, w_k^i\}_{i=1}^{N_s}$ = \texttt{SIS}
+    $[\{\x_{k-1}^i, w_{k-1}^i\}_{i=1}^{N_s},\z_k]$
+    
+    \begin{itemize}
+        \item FOR $i=1:N_s$ 
+            \begin{itemize}
+                \item \texttt{Draw} $\x_k^i \sim q(\x_k|\x_{k-1}^i, \z_k)$
+                \item \texttt{Assign the particle a weight}, $w_k^i$
+            \end{itemize}
+        \item END FOR
+    \end{itemize}
+\end{frame}
+
+\subsection{SIS Issues}
+\begin{frame}{SIS PF: Degeneracy Problem}%{Optional Subtitle}
+	\begin{itemize}
+		\item{After a few iterations, all but onr particle will have negligible weight.
+		}
+		\item{Let
+			$$
+  	  			\hat{N}_{eff}=\frac{1}{\sum\limits_{i=1}^{N_s}(w_k^i)^2}
+			$$
+		}
+		\item{Small $N_{eff}$ indicates severe degeneracy.
+		}
+		\item Counter measures:
+		\begin{itemize}
+    		\item brute force: many, many samples $N_s$
+    		\item good choice of importance density
+    		\item resampling
+		\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{SIS PF: Choice of Importance Density}%{Optional Subtitle}   
+	\begin{itemize}
+		\item{Choose $q(\x_k|\x_{k-1}^i, \z_k)$ so that $N_{eff}$ is maximized.
+		}
+		\item{Most common choice:
+			$$
+    q(\x_k|\x_{k-1}^{i},\z_k) = p(\x_k|\x_{k-1}^i)
+			$$
+		}
+		\item{Then,
+			$$
+ 			   w^i_k \propto w^i_{k-1} p(\z_k|\x_k^i)
+			$$
+		}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{SIS PF: Resampling}%{Optional Subtitle}
+	\begin{itemize}
+		\item{Basic idea of resampling: Eliminate particles that have small weights and to concentrate on particles with large wights
+		}
+		\item{Generate a new set $\{\x_n^{i*}\}_{i=1}^{N_s}$ by resampling (with replacement) $N_s$ times from approximate $p(\x_k|\z_{1:k})$
+		$$
+			p(\x_k|\z_{1:k}) \approx \sum_{i=1}^{N_s} w_k^i \delta(\x_k - \x_k^i)
+		$$
+so that $\Pr(\x_k^{i*}=\x_k^j)=w_k^j$		
+		}
+		\item{Complexity: possible in $O(N_s)$ operations 
+		}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Resampling Algorithm}%{Optional Subtitle}
+    \texttt{
+    Algorithm 2: Resampling Algorithm
+    \newline
+    $\{\x_k^{j*}, w_k^j, i^j\}_{i=1}^{N_s}$ = RESAMPLE
+    $[\{\x_{k}^i, w_{k}^i\}_{i=1}^{N_s},\z_k]$    
+    \begin{itemize}
+        \item Initialize the CDF: $c_1=0$
+        \item FOR $i=2:N_s$
+            \begin{itemize}
+                \item Construct CDF $c_i=c_{i-1}+w_k^i$
+            \end{itemize}
+        \item END FOR
+        \item Start at the bottom of the CDF: $i=1$ 
+        \item Draw a starting point: $u_1\sim U(0, N_s^{-1})$       
+        \item FOR $j=1:N_s$
+            \begin{itemize}
+                \item Move along the CDF: $u_j=u_1+N_s^{-1}(j-1)$
+                \item WHILE $u_j>c_i$
+                    \begin{itemize}
+                        \item $i=i+1$
+                    \end{itemize}
+                \item END WHILE
+                \item Assign sample: $x_k^{j*}=x_k^i$
+                \item Assign weight: $w_k^j=N_s^{-1}$
+                \item Assign parent: $i^j=i$
+            \end{itemize}
+        \item END FOR
+    \end{itemize}
+    }
+\end{frame}
+
+\subsection{Generic Particle Filter}
+\begin{frame}{Generic Particle Filter}%{Optional Subtitle}
+
+    \texttt{
+    Algorithm 3: Generic Particle Filter
+    \newline
+    $\{\x_k^i, w_k^i\}_{i=1}^{N_s}$ = PF
+    $[\{\x_{k-1}^i, w_{k-1}^i\}_{i=1}^{N_s},\z_k]$    
+    \begin{itemize}
+        \item FOR $i=1:N_s$ 
+            \begin{itemize}
+                \item {Draw} $\x_k^i \sim q(\x_k|\x_{k-1}^i, \z_k)$
+                \item {Assign the particle a weight}, $w_k^i$
+            \end{itemize}
+        \item END FOR
+        \item {Calculate total weight}, $t=${SUM}$[\{w_k^i\}_{i=1}^{N_s}]$ 
+        \item FOR $i=1:N_s$
+            \begin{itemize}
+                \item {Normalize}: $w_k^i \leftarrow t^{-1}w_k^i$
+            \end{itemize}
+        \item END FOR
+        \item Calculate $\hat{N}_{eff}$
+        \item IF $\hat{N}_eff < N_T$
+            \begin{itemize}
+                \item Resample: 
+                     $\{\x_k^i, w_k^i, -\}_{i=1}^{N_s}$ = RESAMPLE
+                     $[\{\x_{k}^i, w_{k}^i\}_{i=1}^{N_s}]$ 
+            \end{itemize}
+        \item END IF    
+    \end{itemize}
+    }
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Placing a * after \section means it will not show in the
+% outline or table of contents.
+\section*{Summary}
+
+\begin{frame}{Summary}
+  \begin{itemize}
+    \item{If assumptions hold, Kalman or grid-based filters are optimum.
+    }
+    \item{Otherwise, approximate techniques needed.
+	}    
+    \begin{itemize}
+        \item{\alert{EKF}: approximates dynamics and measurement models to approximate pdf by Gaussian.  
+		}        
+        \item{\alert{Approximate grid-based filters}: approximate continuous state space as a set of discrete regions.
+        }
+            \begin{itemize}
+                \item{
+                    Computationally expensive for high dimensional spaces.
+                }    
+            \end{itemize}
+        \item{
+            \alert{PF}: Approximates pdf as a finite number of samples.
+        }    
+            \begin{itemize}
+                 \item{
+                    Choice of importance density
+                 }     
+                 \item{Resampling
+                 } 
+            \end{itemize}
+    \end{itemize}    
+  \end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% All of the following is optional and typically not needed. 
+\appendix
+\section<presentation>*{\appendixname}
+%\subsection<presentation>*{For Further Reading}
+
+\begin{frame}%[allowframebreaks]
+  \frametitle<presentation>{For Further Reading}
+    
+  \begin{thebibliography}{10}
+    
+  \beamertemplatearticlebibitems
+  % Start with overview books.
+
+  \bibitem{Arulampalam2002}
+    M. S. Arulampalam and S. Maskell and N. Gordon and T. Clapp
+    \newblock {\em A tutorial on particle filters for online nonlinear/non-Gaussian Bayesian tracking}
+    \newblock IEEE Transactions on Signal Processing, 2002.
+ 
+ 
+ 
+  \beamertemplatebookbibitems  
+  % Followed by interesting articles. Keep the list short. 
+
+  \bibitem{Someone2000}
+    Branko Ristic, Sanjeev Arulampalam, Neil Gordon
+    \newblock \em Beyond the Kalman filter: Particle filters for tracking applications
+    \newblock {Artech House Publishers} , 2004.
+  \end{thebibliography}
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\end{document}
+
+
+
+
+
+\begin{frame}{Blocks}
+\begin{block}{Block Title}
+You can also highlight sections of your presentation in a block, with it's own title
+\end{block}
+\begin{theorem}
+There are separate environments for theorems, examples, definitions and proofs.
+\end{theorem}
+\begin{example}
+Here is an example of an example block.
+\end{example}
+\end{frame}
