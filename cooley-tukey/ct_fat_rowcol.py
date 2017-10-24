@@ -5,13 +5,16 @@ import numpy as np
 # first, row ffts
 # then, column ffts
 
-size = 32
+size = 64
+num_rows = 4
 
 # input is a vector of 1xsize
 A = np.zeros((1, size))
-A[0, 0] = 1
+A[0, 0] = 0
 A[0, 1] = 1
-A[0, 9] = 5
+A[0, 2] = 2
+A[0, 3] = 3
+A[0, 4] = 4
 
 # ground-truth
 Afft_gt = np.fft.fft(A)
@@ -19,7 +22,7 @@ Afft_gt = np.fft.fft(A)
 # step 1: reshape input to 2x(size/2)
 # 1st row is even indexes
 # 2nd row is odd indexes
-M = A.reshape((int(size/2), 2))
+M = A.reshape((int(size/num_rows), num_rows))
 M = np.transpose(M)
 
 # step 2: calculate fft of rows
@@ -28,7 +31,10 @@ Mfftrow = np.fft.fft(M, axis = 1)
 # step 3: multiply rows by twiddle factors
 W = np.exp(-1j * 2 * np.pi/size)
 twiddle = np.zeros(M.shape)
-twiddle[1, :] = np.arange(int(size/2))
+
+for idx in range(1, num_rows):
+    twiddle[idx, :] = idx * np.arange(int(size/num_rows))
+
 twiddle = W ** twiddle
 H = np.multiply(Mfftrow , twiddle)
 
