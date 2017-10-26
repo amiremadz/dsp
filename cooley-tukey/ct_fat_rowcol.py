@@ -5,23 +5,24 @@ import numpy as np
 # first, row ffts
 # then, column ffts
 
-size = 64
-num_rows = 4
+size = 2 #64
+num_rows = 2 #4
 
 # input is a vector of 1xsize
 A = np.zeros((1, size))
-A[0, 0] = 0
-A[0, 1] = 1
-A[0, 2] = 2
-A[0, 3] = 3
-A[0, 4] = 4
+A[0, 0] = 1
+#A[0, 1] = 1
+#A[0, 2] = 2
+#A[0, 3] = 3
+#A[0, 4] = 4
 
 # ground-truth
 Afft_gt = np.fft.fft(A)
 
 # step 1: reshape input to 2x(size/2)
-# 1st row is even indexes
-# 2nd row is odd indexes
+# 1st row is 4*k indexes
+# 2nd row is 4k + 1 indexes
+# ....
 M = A.reshape((int(size/num_rows), num_rows))
 M = np.transpose(M)
 
@@ -50,7 +51,7 @@ Afft = np.reshape(Hfft, (1, size))
 # print the result
 Afft_gt_r   = Afft_gt.real.reshape((size, 1))
 Afft_gt_im  = Afft_gt.imag.reshape((size, 1))
-print("GT:")
+print("\nGT:")
 print(np.hstack( (Afft_gt_r, Afft_gt_im) ))
 
 Afft_r  = Afft.real.reshape((size, 1))
