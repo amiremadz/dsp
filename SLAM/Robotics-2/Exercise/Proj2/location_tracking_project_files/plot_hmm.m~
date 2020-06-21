@@ -1,0 +1,68 @@
+#   This source code was developed for the lectures of robotics2 
+#   at the University of Freiburg.
+#  
+#   Copyright (c) 2012 Jonas Rist
+#   
+#   It is licenced under the Common Creative License,
+#   Attribution-NonCommercial-ShareAlike 3.0
+#  
+#   You are free:
+#     - to Share - to copy, distribute and transmit the work
+#     - to Remix - to adapt the work
+#  
+#   Under the following conditions:
+#  
+#     - Attribution. You must attribute the work in the manner specified
+#       by the author or licensor (but not in any way that suggests that
+#       they endorse you or your use of the work).
+#    
+#     - Noncommercial. You may not use this work for commercial purposes.
+#    
+#     - Share Alike. If you alter, transform, or build upon this work,
+#       you may distribute the resulting work only under the same or
+#       similar license to this one.
+#  
+#   Any of the above conditions can be waived if you get permission
+#   from the copyright holder.  Nothing in this license impairs or
+#   restricts the author's moral rights.
+#  
+#   This software is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied 
+#   warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+#   PURPOSE.  
+
+
+#plots a gps track in 2D
+#input
+#  track:  struct containing the gps track
+#          (track is required to have the fields 'x' and 'y')
+
+#optional input
+#  map:    struct containing the street map data
+#          (map is required to have the fields 'x','y','id' and 'n');
+#          - x,y,id are vectors containing node coords and ids
+#          - n is a cell array containing a vector with neighbour
+#            node ids for each node
+#  R1, R2: trackpoints defining a rectangle (the region to plot)
+
+function [track, map] = plot_hmm(hmm, map)
+  % get max values
+  R1 = [min([hmm.x](1,:)) min([hmm.x](2,:))];
+  R2 = [max([hmm.x](1,:)) max([hmm.x](2,:))];
+  z = zeros(2,size(hmm,2));
+  for i = 1:size(hmm,2)    
+    z(:,i) = hmm(i).obs.z;
+  end
+  data_track.x = z(1,:);
+  data_track.y = z(2,:);
+  data_track.date = [hmm.date];
+  filter_track.x = [hmm.x](1,:);
+  filter_track.y = [hmm.x](2,:);
+  filter_track.date = [hmm.date];
+  hold on;
+  plot(data_track.x,data_track.y,'rd');
+  plot(filter_track.x,filter_track.y,'gd');
+  plot_street_map(filter_map(map,R1,R2),1);
+  %plot_gps_track(data_track, map, R1, R2,1,size(hmm,2),'rd');
+  %plot_gps_track(filter_track, map, R1, R2,1,size(hmm,2),'gd');
+end

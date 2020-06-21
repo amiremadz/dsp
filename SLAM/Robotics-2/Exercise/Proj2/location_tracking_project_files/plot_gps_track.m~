@@ -1,0 +1,90 @@
+#   This source code was developed for the lectures of robotics2 
+#   at the University of Freiburg.
+#  
+#   Copyright (c) 2012 Jonas Rist
+#   
+#   It is licenced under the Common Creative License,
+#   Attribution-NonCommercial-ShareAlike 3.0
+#  
+#   You are free:
+#     - to Share - to copy, distribute and transmit the work
+#     - to Remix - to adapt the work
+#  
+#   Under the following conditions:
+#  
+#     - Attribution. You must attribute the work in the manner specified
+#       by the author or licensor (but not in any way that suggests that
+#       they endorse you or your use of the work).
+#    
+#     - Noncommercial. You may not use this work for commercial purposes.
+#    
+#     - Share Alike. If you alter, transform, or build upon this work,
+#       you may distribute the resulting work only under the same or
+#       similar license to this one.
+#  
+#   Any of the above conditions can be waived if you get permission
+#   from the copyright holder.  Nothing in this license impairs or
+#   restricts the author's moral rights.
+#  
+#   This software is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied 
+#   warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+#   PURPOSE.  
+
+
+#plots a gps track in 2D
+#input
+#  track:  struct containing the gps track
+#          (track is required to have the fields 'x' and 'y')
+
+#optional input
+#  map:    struct containing the street map data
+#          (map is required to have the fields 'x','y','id' and 'n');
+#          - x,y,id are vectors containing node coords and ids
+#          - n is a cell array containing a vector with neighbour
+#            node ids for each node
+#  R1, R2: trackpoints defining a rectangle (the region to plot)
+#  plot_format: format string to use for the track plot
+
+function [track, map] = plot_gps_track(track, map, R1, R2, start, stop, plot_format)
+  if nargin>=6
+    track.x = track.x(start:stop);
+    track.y = track.y(start:stop);
+    track.date = track.date(start:stop);
+  end
+  if nargin==1
+    plot(track.x,track.y,plot_format);
+    return;
+  end
+  if nargin <= 6
+    plot_format = 'rd';
+  end
+  if nargin >= 4
+  track = filter_track(track,R1,R2);
+  map = filter_map(map,R1,R2);
+  end
+  end
+  THRESH = 100;
+  tracksize = size([track.x],2);
+  % filter outliers
+  del = ones(1,tracksize);
+  for i = 1:tracksize
+    if i==1
+      if (abs(track.x(1)-track.x(2)) > THRESH) || (abs(track.y(1)-track.y(2)) > THRESH)
+        del(1) = 0;
+      end
+    else
+      if (abs(track.x(i-1)-track.x(i)) > THRESH) || (abs(track.y(i-1)-track.y(i)) > THRESH)
+        del(i-1) = 0;
+      end
+    end
+  end
+  track.x = track.x(logical(del));
+  track.y = track.y(logical(del));
+  printf('filtered out %d outliers\n',(tracksize-sum(del)))
+  plot(track.x,track.y,plot_format)
+  if nargin==1
+    return;
+  end
+  plot_street_map(map,1);
+end

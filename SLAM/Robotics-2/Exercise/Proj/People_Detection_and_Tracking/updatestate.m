@@ -1,0 +1,1 @@
+function [x C] = updatestate(xp,Cp,z,zp,R,H)% Compute innovation and innovation covariancev = z - zp;S = H*Cp*H' + R;% Compute Kalman gainK = Cp*H'*inv(S);% Update state and state covariancex = xp + K*v;C = Cp - K*H*Cp;  
