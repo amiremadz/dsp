@@ -20,10 +20,10 @@ function dydt = ddefun(t, y, Z) % equation being solved
     h = 0.15;
     m = 0.25;
 
-    dydt = [(a - f) * y(1) - b * y(1) * y(4);
-            h * b * ylag1(1) * ylag2(2) - b * y(1) * y(4) - m * y(4);
-            b * y(1) * y(4) - b * ylag1(1) * ylag2(2);
-            a * y(2) + f * y(1)
+    dydt = [(a - f) * y(1) - b * y(1) * y(2);
+            h * b * ylag1(1) * ylag2(2) - b * y(1) * y(2) - m * y(2);
+            b * y(1) * y(2) - b * ylag1(1) * ylag2(2);
+            a * y(4) + f * y(1)
            ];
 endfunction    
 
