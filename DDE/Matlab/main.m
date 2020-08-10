@@ -1,33 +1,33 @@
 clear all;
 
-lags = [0.6 0.6];
-tspan = [0 5];
+lags = [0.4314];
+tspan = [0 25];
 sol = dde23(@ddefun, lags, @history, tspan);
 
-plot(sol.x, sol.y, '-o')
+figure
+plot(sol.x, log10(sol.y), '-')
 xlabel('Time t');
 ylabel('Solution y');
-legend('S', 'V', 'I', 'R', 'Location', 'NorthWest');
+legend('S', 'V', 'I', 'R', 'Location', 'SouthEast');
 
-% y = [S, V, I, R]
+% y = [S, v, I, R]
 function dydt = ddefun(t, y, Z) % equation being solved
-    ylag1 = Z(:, 1);
-    ylag2 = Z(:, 2);
+    ylag = Z(:, 1); 
 
-    a = 0.1;
-    f = 0.2;
-    b = 0.3;
-    h = 0.15;
-    m = 0.25;
+    a = 0.8608;
+    f = 10 ^ -4.940;
+    b = 10 ^ -5.931;
+    h = 1.624;
+    m = 0.00095;
 
-    dydt = [(a - f) * y(1) - b * y(1) * y(2);
-            h * b * ylag1(1) * ylag2(2) - b * y(1) * y(2) - m * y(2);
-            b * y(1) * y(2) - b * ylag1(1) * ylag2(2);
-            a * y(4) + f * y(1)
+    dydt = [(a - f) * y(1) - b * y(1) * y(2);                         % S
+            h * b * ylag(1) * ylag(2) - b * y(1) * y(2) - m * y(2);   % V
+            b * y(1) * y(2) - b * ylag(1) * ylag(2);                  % I
+            a * y(4) + f * y(1)                                       % R
            ];
 endfunction    
 
 function s = history(t) % history function for t <= 0
-  s = ones(4, 1);
+  s = [10 ^ 4.906; 10 ^ 4.627; 0; 0];
 endfunction
 
